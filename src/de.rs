@@ -2091,6 +2091,21 @@ impl std::convert::From<Error> for std::io::Error {
 
 impl fmt::Display for Error {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        if let Some(line) = self.inner.line {
+            write!(f, "at line {} column {}: ", line + 1, self.inner.col + 1)?;
+        }
+
+        if !self.inner.key.is_empty() {
+            write!(f, "at key `")?;
+            for (i, k) in self.inner.key.iter().enumerate() {
+                if i > 0 {
+                    write!(f, ".")?;
+                }
+                write!(f, "{}", k)?;
+            }
+            write!(f, "`: ")?;
+        }
+
         match &self.inner.kind {
             ErrorKind::UnexpectedEof => "unexpected eof encountered".fmt(f)?,
             ErrorKind::InvalidCharInString(c) => write!(
@@ -2151,21 +2166,6 @@ impl fmt::Display for Error {
                 "invalid TOML value, did you mean to use a quoted string?"
             )?,
             ErrorKind::__Nonexhaustive => panic!(),
-        }
-
-        if !self.inner.key.is_empty() {
-            write!(f, " for key `")?;
-            for (i, k) in self.inner.key.iter().enumerate() {
-                if i > 0 {
-                    write!(f, ".")?;
-                }
-                write!(f, "{}", k)?;
-            }
-            write!(f, "`")?;
-        }
-
-        if let Some(line) = self.inner.line {
-            write!(f, " at line {} column {}", line + 1, self.inner.col + 1)?;
         }
 
         Ok(())
